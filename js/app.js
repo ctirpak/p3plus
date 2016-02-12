@@ -79,7 +79,7 @@ Entity.prototype.render = function () {
 				(this.x < 0)) {
 			this.tile = -1;
 		} else {
-			this.tile = Math.floor(this.xCenter / XSPACING) + Math.floor((this.yCenter - YSPACING) / YSPACING) * 5;
+			this.tile = Math.floor(this.xCenter / XSPACING) + Math.floor((this.yCenter - YSPACING) / YSPACING) * COLUMNS;
 		}
 	}
 };
@@ -107,7 +107,7 @@ Entity.prototype.render = function () {
 var Item = function (s, r, c) {
 	/** @memberOf Item */
 	this.dateExpires = new Date();
-	this.dateNext = new Date(new Date().getTime() + 5 * 1000);  // wait before displaying the first item
+	this.dateNext = new Date(new Date().getTime() + ITEMNODISPLENFACTORINITIAL * 1000);  // wait before displaying the first item
 	this.collect = false;
 	this.timeLeft = 0;
 	Entity.call(this, s, r, c, 'item');
@@ -140,9 +140,9 @@ Item.prototype.update = function (dt) {
 	/** Random number used to determine which item to display */
 	var ranNum = Math.random();
 	/** Random X position */
-	var itemX = Math.floor((Math.random() * 5)) * 101;
+	var itemX = Math.floor((Math.random() * COLUMNS)) * XSPACING;
 	/** Random Y position */
-	var itemY = Math.floor((Math.random() * 2) + 1) * 83;
+	var itemY = Math.floor((Math.random() * ITEMROWS) + 1) * YSPACING;
 	/** current date */
 	var t1 = new Date();
 
@@ -167,10 +167,10 @@ Item.prototype.update = function (dt) {
 			secondsDelay2 = Math.floor((Math.random() * 2) + gameLevel / 8);
 
 			// get time and add X seconds to determine how long the Item will be visible
-			this.dateExpires = new Date(new Date().getTime() + (3 + secondsDelay2) * 1000);
+			this.dateExpires = new Date(new Date().getTime() + (ITEMDISPLENFACTOR + secondsDelay2) * 1000);
 
 			// set time to wait before a new Item can be displayed
-			this.dateNext = new Date(new Date().getTime() + (10 + secondsDelay) * 1000);
+			this.dateNext = new Date(new Date().getTime() + (ITEMNODISPLENFACTOR + secondsDelay) * 1000);
 
 			// determine Item to display based on random number and keep track of count
 			// for example, item 0 is displayed ~30% of the time, while item 3 is only
@@ -259,11 +259,12 @@ Message.constructor = Message;
 Message.prototype.update = function (dt) {
 	/** @memberOf Message */
 	// check to see if the item should still be displayed
-	if ((this.dateExpires < new Date()) &&
-			(!gameOver)) {
-		this.visible = false;	  // hide message
+	if (this.visible) {
+		if ((this.dateExpires < new Date()) &&
+				(!gameOver)) {
+			this.visible = false;	  // hide message
+		}
 	}
-
 };
 /**
  * @memberOf Message
@@ -275,12 +276,12 @@ Message.prototype.render = function () {
 		ctx.font = '18px Helvetica';
 		ctx.textAlign = 'left';
 		ctx.textBaseline = 'top';
-		ctx.fillText(this.Text, XSPACING * 2.7, (YSPACING * 6.7) - 12);
+		ctx.fillText(this.Text, XSPACING * 2.7, (YSPACING * ROWS * TILEMULTIPLIER) - 12);
 	}
 };
 Message.prototype.showText = function (s) {
 	this.Text = s;
-	this.dateExpires = new Date(new Date().getTime() + 3 * 1000);
+	this.dateExpires = new Date(new Date().getTime() + MSGDISPLENFACTOR * 1000);
 	this.visible = true;			  // set visibility
 };
 
@@ -304,8 +305,8 @@ var Enemy = function (s, r, c) {
 	 * @memberOf Enemy
 	 * Updates speed and calls base class constructor
 	 */
-	this.addSpeed = 20 * gameLevel;
-	this.minSpeed = 50 * ((gameLevel / 8) + 1);
+	this.addSpeed = LEVELSPEEDFACTOR * gameLevel;
+	this.minSpeed = MINSPEEDFACTOR * ((gameLevel / 8) + 1);
 	this.speed = (this.addSpeed - (Math.floor((Math.random() * this.addSpeed) + 1))) + this.minSpeed;	  // generate random number for speed
 	Entity.call(this, s, r, c, 'enemy');
 };
@@ -334,8 +335,8 @@ Enemy.prototype.update = function (dt) {
 	if (this.x > canvas.width) {
 		// set to left side of canvas, off screen
 		this.x = 0 - Resources.get(this.sprite).width;
-		this.addSpeed = 20 * gameLevel;
-		this.minSpeed = 50 * ((gameLevel / 8) + 1);
+		this.addSpeed = LEVELSPEEDFACTOR * gameLevel;
+		this.minSpeed = MINSPEEDFACTOR * ((gameLevel / 8) + 1);
 
 		// get new speed
 		this.speed = (this.addSpeed - (Math.floor((Math.random() * this.addSpeed) + 1))) + this.minSpeed;
@@ -404,7 +405,8 @@ Player.prototype.handleInput = function (key) {
 	/**
 	 * @memberOf Player
 	 */
-	if (gameOver && key === 'restart') {
+	//if (gameOver && key === 'restart') {
+	if (key === 'restart') {				//allow restart even if game is in progress
 		gameOver = false;
 		resetKeyPressed = true;
 	} else if (gameOver && key !== 'restart') {
@@ -423,7 +425,7 @@ Player.prototype.handleInput = function (key) {
 			break;
 		case 'down':
 			this.y += YSPACING;
-			if (this.y >= (6 * YSPACING)) {
+			if (this.y >= ((ROWS - 1) * YSPACING)) {
 				this.y -= YSPACING;
 			}
 			break;
@@ -435,7 +437,7 @@ Player.prototype.handleInput = function (key) {
 			break;
 		case 'right':
 			this.x += XSPACING;
-			if (this.x >= (5 * XSPACING)) {
+			if (this.x >= (COLUMNS * XSPACING)) {
 				this.x -= XSPACING;
 			}
 			break;
@@ -464,12 +466,12 @@ Player.prototype.update = function (dt) {
 	/** @memberOf Item
 	 */
 	/** checks to see if player is in play area */
-	if ((this.tile < 25) &&
+	if ((this.tile < PLAYABLETILES) &&
 			(this.inPlay === false)) {
 		this.inPlay = true;
 		this.timeInPlay = new Date();
 	} else
-	if (this.tile >= 25)
+	if (this.tile >= DANGERTILES)
 		this.inPlay = false;
 };
 Player.prototype.render = function () {
@@ -499,38 +501,6 @@ var allEnemies = [];
 var oneEnemy;
 /**
  * 
- * @type Number
- * @description Width (spacing) between each background tile
- */
-var XSPACING = 101;
-/**
- * 
- * @type Number
- * @description Height (spacing) between each background tile
- */
-var YSPACING = 83;
-/** List of ITEMS that can be displayed */
-var ITEMS = [
-	'images/Gem Blue.png',
-	'images/Gem Green.png',
-	'images/Gem Orange.png',
-	'images/Key.png',
-	'images/Heart.png',
-	'images/Star.png',
-	'images/Rock.png'
-];
-/** Name of ITEMS */
-var ITEMNAMES = [
-	'Blue Gem',
-	'Green Gem',
-	'Gold Gem',
-	'Key',
-	'Heart',
-	'Star',
-	'Rock'
-];
-/**
- * 
  * @type Boolean
  * @description Used to indicate if the game is paused
  */
@@ -552,11 +522,11 @@ var resetKeyPressed = false;
  * @type Number
  * @description Used to control game difficulty
  */
-var gameLevel = 1;
+var gameLevel = STARTGAMELEVEL;
 
 // create enemy array
-for (var x = 0; x < 4; x++) {
-	oneEnemy = new Enemy('images/enemy-bug.png', (x + 1) * YSPACING, -101);
+for (var x = 0; x < ENEMYROWS; x++) {
+	oneEnemy = new Enemy('images/enemy-bug.png', (x + 1) * YSPACING, -1 * XSPACING);
 	allEnemies.push(oneEnemy);
 }
 
@@ -565,7 +535,7 @@ for (var x = 0; x < 4; x++) {
  * @type Player
  * @description Create player object
  */
-var player = new Player('images/char-boy.png', 5 * YSPACING, 2 * XSPACING);
+var player = new Player('images/char-boy.png', PLAYERSTARTY * YSPACING, PLAYERSTARTX * XSPACING);
 //player.setPos(5 * 83, 101 * 2);
 
 /**
@@ -583,7 +553,7 @@ item.visible = false;
  * @type Message
  * @description Create message object for displaying messages on the canvas
  */
-var msg = new Message('Welcome!', YSPACING * 6.7 - 12, XSPACING * 3);
+var msg = new Message('Welcome!', YSPACING * ROWS * TILEMULTIPLIER - 12, XSPACING * 3);
 
 var keyAllowed = true; // used to prevent auto repeated key down events.
 /**

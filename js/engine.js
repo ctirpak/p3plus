@@ -33,8 +33,8 @@ var Engine = (function (global) {
 			ctx = canvas.getContext('2d'),
 			lastTime;
 
-	canvas.width = 505;
-	canvas.height = 707;
+	canvas.width = CANVASWIDTH;
+	canvas.height = CANVASHEIGHT;
 	doc.body.appendChild(canvas);
 
 	/* This function serves as the kickoff point for the game loop itself
@@ -130,53 +130,53 @@ var Engine = (function (global) {
 				switch (item.itemNum) {
 					case 0:
 						player.blueGems += 1;
-						player.score += 25 + Math.floor(item.timeLeft * 1.5);
+						player.score += BLUEGEMSCORE + Math.floor(item.timeLeft * TIMEBONUSFACTOR);
 						item.visible = false;
 						break;
 					case 1:
 						player.greenGems += 1;
-						player.score += 25 + Math.floor(item.timeLeft * 1.5);
+						player.score += GREENGEMSCORE + Math.floor(item.timeLeft * TIMEBONUSFACTOR);
 						item.visible = false;
 						break;
 					case 2:
 						player.orangeGems += 1;
-						player.score += 25 + Math.floor(item.timeLeft * 1.5);
+						player.score += ORANGEGEMSCORE + Math.floor(item.timeLeft * TIMEBONUSFACTOR);
 						item.visible = false;
 						break;
 					case 3:
 						player.keys += 1;
-						player.score += 75 + Math.floor(item.timeLeft * 1.5);
+						player.score += KEYSCORE + Math.floor(item.timeLeft * TIMEBONUSFACTOR);
 						item.visible = false;
 						break;
 					case 4:
 						player.hearts += 1;
-						player.score += 100 + Math.floor(item.timeLeft * 1.5);
+						player.score += HEARTSCORE + Math.floor(item.timeLeft * TIMEBONUSFACTOR);
 						item.visible = false;
 						break;
 					case 5:
 						player.stars += 1;
-						player.score += 125 + Math.floor(item.timeLeft * 1.5);
+						player.score += STARSCORE + Math.floor(item.timeLeft * TIMEBONUSFACTOR);
 						item.visible = false;
 						break;
 					case 6:
 						player.stones += 1;
-						player.score += 125 + Math.floor(item.timeLeft * 1.5);
+						player.score += STONESCORE + Math.floor(item.timeLeft * TIMEBONUSFACTOR);
 						item.visible = false;
 						break;
 				}
 
 
-				msg.showText('You got a ' + ITEMNAMES[item.itemNum] + '! +' + Math.floor(item.timeLeft * 1.5));
+				msg.showText('You got a ' + ITEMNAMES[item.itemNum] + '! +' + Math.floor(item.timeLeft * TIMEBONUSFACTOR));
 			}
 		}
 		// check to see if player made it to the top
-		if ((player.tile < 5) &&
+		if ((player.tile < COLUMNS) &&
 				(player.tile >= 0)) {
-			player.y = 5 * YSPACING;
-			player.x = 2 * XSPACING;
-			player.score += 100;
+			player.y = PLAYERSTARTY * YSPACING;
+			player.x = PLAYERSTARTX * XSPACING;
+			player.score += FINISHSCORE;
 			player.cross += 1;
-			gameLevel += .6;
+			gameLevel += GAMELEVELFACTORINCR;
 			player.inPlay = false;
 			var timeBonus = Math.floor((new Date() - player.timeInPlay) / 100);
 			msg.showText('You made it!! +' + timeBonus);
@@ -188,16 +188,16 @@ var Engine = (function (global) {
 			allEnemies.forEach(function (enemy) {
 				if (enemy.tile === player.tile) {
 					msg.showText('OUCH! -100');
-					player.y = 5 * YSPACING;
-					player.x = 2 * XSPACING;
+					player.y = PLAYERSTARTY * YSPACING;
+					player.x = PLAYERSTARTX * XSPACING;
 					player.inPlay = false;
 					if (player.hearts > 1) {
-						player.hearts -= 1;
-						player.score -= 100;
+						player.hearts -= HEARTLOSS;
+						player.score -= SCORELOSS;
 					} else {
 						// game over
-						player.hearts -= 1;
-						player.score -= 100;
+						player.hearts -= HEARTLOSS;
+						player.score -= SCORELOSS;
 						msg.showText("GAME OVER - 'R' to Play");
 						gameOver = true;
 					}
@@ -222,12 +222,15 @@ var Engine = (function (global) {
 			'images/stone-block.png', // Row 1 of 3 of stone
 			'images/stone-block.png', // Row 2 of 3 of stone
 			'images/stone-block.png', // Row 3 of 3 of stone
+			'images/stone-block.png', // Row 3 of 3 of stone
+			'images/stone-block.png', // Row 3 of 3 of stone
+			'images/grass-block.png', // Row 1 of 2 of grass
 			'images/grass-block.png', // Row 1 of 2 of grass
 			'images/grass-block.png',    // Row 2 of 2 of grass
 			'images/grass-block-2.png'    // instructions row
 		],
-				NUMROWS = 7,
-				NUMCOLS = 5,
+				NUMROWS = ROWS,
+				NUMCOLS = COLUMNS,
 				row, col;
 
 		/* Loop through the number of rows and columns we've defined above
@@ -243,7 +246,7 @@ var Engine = (function (global) {
 				 * so that we get the benefits of caching these images, since
 				 * we're using them over and over.
 				 */
-				ctx.drawImage(Resources.get(ROWIMAGES[row]), col * 101, row * 83);
+				ctx.drawImage(Resources.get(ROWIMAGES[row]), col * XSPACING, row * YSPACING);
 			}
 		}
 
@@ -270,7 +273,7 @@ var Engine = (function (global) {
 	}
 	function renderScore() {
 		var i; // index number of ITEMS
-		var y = (YSPACING * 6.7); // y location of score
+		var y = (YSPACING * ROWS * TILEMULTIPLIER); // y location of score
 		var x = 0; // x location of score
 		var XGAP = 53; // gap between score items
 		var TEXTGAP = 25; // gap between item and text
@@ -324,7 +327,7 @@ var Engine = (function (global) {
 	 * @description adds instructions to canvas
 	 */
 	function renderInstructions() {
-		var y = (YSPACING * 6.7); // y locatino of directions
+		var y = (YSPACING * ROWS * TILEMULTIPLIER); // y locatino of directions
 		var x = 10; // x location
 		var YGAP = 15; // gap between rows
 		// Score
@@ -370,7 +373,7 @@ var Engine = (function (global) {
 	 */
 	function reset() {
 		// reset game data to start new game
-		player.hearts = 5;
+		player.hearts = HEARTSTARTCOUNT;
 		player.keys = 0;
 		player.blueGems = 0;
 		player.greenGems = 0;
@@ -379,12 +382,12 @@ var Engine = (function (global) {
 		player.stones = 0;
 		player.score = 0;
 		player.cross = 0;
-		player.x = 2 * XSPACING;
-		player.y = 5 * YSPACING;
+		player.x = PLAYERSTARTX * XSPACING;
+		player.y = PLAYERSTARTY * YSPACING;
 		msg.showText('Welcome!');
 		gameOver = false;
 		resetKeyPressed = false;
-		gameLevel = 1;
+		gameLevel = STARTGAMELEVEL;
 
 	}
 
